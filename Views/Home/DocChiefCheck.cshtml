@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width" />
+
+<link rel="stylesheet" href="/lib/bootstrap-4.0.0-dist/css/bootstrap.css" />
+<link rel="stylesheet" href="/lib/bootstrap-table/bootstrap-table.css" />
+
+
+<div class="container">
+    <div>
+        <ul id="NavChoise" class="nav nav-tabs">
+            <li id="LiRplBtn" class="nav-item">
+                <a class="nav-link">疑似问题回复审核</a>
+            </li>
+            <li id="LiSiGsBtn" class="nav-item">
+                <a class="nav-link">医保分值付费</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="row">
+        您的工号：<label id="EmpNoLabel">@Html.ViewData["empno"]</label>
+        <p>显示的病人为科主任工号权限所包含的科室，请根据科室、主管医生来进行相关审核</p>
+    </div>
+
+    <div id="ChiefContain">
+        <div id="DivRplCheck" class="row">
+            <!--科主任疑似反馈问题审核 -->
+            <div class="col">
+                <table id="ChiefTable" style="font-size: small"></table>
+            </div>
+            <div class="col">2</div>
+        </div>
+        <div id="DivDiseaseGroupScores">
+            <!-- 医保病种分值付费 -->
+            <div class="row">
+                <a id="ShowDeptSiScores" class="btn btn-primary">显示数据</a>
+            </div>
+            <div class="row">
+                This is ScoresTable
+                <table id="SiMeasureTable" style="font-size: small"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/lib/jquery-3.3.1.js"></script>
+<script src="/lib/bootstrap-4.0.0-dist/js/bootstrap.js"></script>
+<script src="/lib/bootstrap-table/bootstrap-table.js"></script>
+<script src="/lib/bootstrap-table/locale/bootstrap-table-zh-CN.js"></script>
+<script src="/lib/alasql-v0.4.11/alasql.js"></script>
+
+<script>
+    /* navbar 导航面板显示每个版块*/
+    $("#NavChoise li").click(function () {
+        if ($(this).attr("id") === "LiRplBtn") {
+            console.log($(this).attr("id"));
+            $("#ChiefContain").children().attr("hidden", true);
+            $("#ChiefContain").children("#DivRplCheck").attr("hidden", false);
+        }
+        if ($(this).attr("id") === "LiSiGsBtn") {
+            console.log($(this).attr("id"));
+            $("#ChiefContain").children().attr("hidden", true);
+            $("#ChiefContain").children("#DivDiseaseGroupScores").attr("hidden", false);
+        }
+    });
+</script>
+<script id="syCheck">
+    var EmpNo = $('#EmpNoLabel').text();
+    $('#ChiefTable').bootstrapTable('showLoading');
+    $.ajax({
+        url: "/api/values/GetChiefMaster?empno=" + EmpNo,
+        type: 'GET',
+        async: true,
+        success: function (data) {
+            dataobj = JSON.parse(data);
+            $('#ChiefTable').bootstrapTable({
+                data: dataobj,
+                clickToSelect: true,
+                rowStyle: function (row, index) {
+                    return {
+                        css: {
+                            "font-size": "12px"
+                        }
+                    };
+                },
+                columns: [{
+                        filed: 'isOk',
+                        title: '通过',
+                        checkbox: true
+                    },
+                    {
+                        field: 'PATIENT_ID',
+                        title: '病人ID'
+                    }, {
+                        field: 'VISIT_ID',
+                        title: '住院次数'
+                    }, {
+                        field: 'TOTAL_COSTS',
+                        title: '住院费用'
+                    }, {
+                        field: 'MAIN_DIAG_ICD_NAME',
+                        title: '主诊断'
+                    }, {
+                        field: 'MAIN_OPER_NAME',
+                        title: '主手术'
+                    }, {
+                        field: 'ISSUE_TYPE_NAME',
+                        title: '类型'
+                    }, {
+                        field: 'DOCTOR_IN_CHARGE',
+                        title: '主管医生'
+                    }, {
+                        field: 'TRANS_DEPT',
+                        title: '转科'
+                    }
+                ]
+            });
+        }
+    });
+    $('#ChiefTable').bootstrapTable('hideLoading');
+
+    function actionFormatter(value, row, index) {
+        var result = "";
+        //selectBtn = isCheckOk();
+        result = "<input class='form-check-input' type='checkbox' value='' />";
+        return result;
+    }
+</script>
+<script id="SiMeasure">
+    $.ajax({
+        url: '/api/DocChief/GetSiMeasureByStaffDept',
+        type:'GET',
+        async:true,
+        success: function(data){
+            var midata = JSON.parse(data)
+            <!-- console.log(midata); -->
+            var res = alasql('select PATIENT_ID from ?', [midata]);
+            console.log(res);
+        }
+    });
+
+</script>
+
+</html>

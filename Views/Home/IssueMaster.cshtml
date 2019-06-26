@@ -1,0 +1,665 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width"/>
+
+@* <link rel="stylesheet" href="/lib/AmazeUI-2.7.2/css/amazeui.css"/> *@
+@* <script src="/lib/jquery-3.3.1.js"></script> *@
+@* <script src="/lib/AmazeUI-2.7.2/js/amazeui.js"></script> *@
+@* <script src="/lib/AmazeUI-2.7.2/js/amazeui.widgets.helper.js"></script> *@
+
+<link rel="stylesheet" href="/lib/bootstrap-3.3.7-dist/css/bootstrap.css"/>
+<link rel="stylesheet" href="/lib/bootstrap-table/bootstrap-table.css"/>
+<link rel="stylesheet" href="/lib/AmazeUI-2.7.2/css/amazeui.css"/>
+<link rel="stylesheet" href="/lib/wangEditor-3.1.1/wangEditor.css"/>
+
+<script src="/lib/jquery-3.3.1.js"></script>
+<script src="/lib/bootstrap-3.3.7-dist/js/bootstrap.js"></script>
+<script src="/lib/bootstrap-table/bootstrap-table.js"></script>
+<script src="/lib/bootstrap-table/locale/bootstrap-table-zh-CN.js"></script>
+<script src="/lib/AmazeUI-2.7.2/js/amazeui.js"></script>
+<script src="/lib/AmazeUI-2.7.2/js/amazeui.widgets.helper.js"></script>
+<script src="/lib/wangEditor-3.1.1/wangEditor.js"></script>
+
+<div class="am-g">
+    <!-- <div><h1>疑似信息回答</h1></div> -->
+    <div>
+        <div class="alert alert-info">
+            您的工号:<label id="showempno" class="am-badge am-badge-primary">@Html.ViewData["empno"]</label>
+            类型：1:药品异常 2:耗材异常 3:住院天数异常 4:住院费用异常
+            <a class="am-btn am-btn-secondary am-btn-sm" data-am-modal="{target: '#doc-modal-2', closeViaDimmer: 0, width: 600, height: 525}">反馈规范模板</a>
+        </div>
+        <div>
+            <select id="DeptGroupSelect">
+            </select>
+            <button id="ShowAllMaster" class=" am-btn am-btn-default am-btn-sm">全科室</button>
+        </div>
+    </div>
+
+    <div class="am-g">
+        <div class="am-u-sm-9" style="height: 600px">
+            <table id="mastertable" style="font-size: small"></table>
+        </div>
+        <div class="am-u-sm-3">
+            <p id="statuslabel">反馈意见</p>
+            <div>
+                <form id="rplform" class="am-form">
+                    <div class="am-form-group">
+                        <label name="ISSUE_TYPE">异常类型</label>
+                        <input id="rpl-issuetype" name="ISSUE_TYPE" disabled="disabled" width="50"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label name="INP_NO">住院号</label>
+                        <input id="rpl-inpno" name="INP_NO" disabled="disabled" width="120"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label name="VISIT_ID">住院次数</label>
+                        <input id="rpl-visitid" name="VISIT_ID" disabled="disabled"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label name="MAIN_DIAG_ICD_NAME">主要诊断名称</label>
+                        <input id="rpl-diagname" name="MAIN_DIAG_ICD_NAME" disabled="disabled"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label name="MAIN_OPER_NAME">主要手术名称</label>
+                        <input id="rpl-oprname" name="MAIN_OPER_NAME" disabled="disabled"/>
+                    </div>
+                    <div>
+                        <label>自查事实</label>
+                        <textarea id="factbox" name="FACT" wrap="hard" rows="8"></textarea>
+                    </div>
+                    <div>
+                        <label>自查结论</label>
+                        <textarea id="resultbox" name="RESULT" wrap="hard" rows="4"></textarea>
+                    </div>
+                    <input hidden="true" id="issueimportdatetime"/>
+                </form>
+                <script>
+                    $("#factbox").val("1.出院诊断：\n2.调查核实中发现（针对具体异常类型进行分析）：");
+                    $("#resultbox").val("1.核查结论：xx合理\n2.核查理由：");
+                </script>
+                <button id="replyadd" class="am-btn am-btn-default">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div name="弹出窗口1">
+    <div class="am-modal am-modal-no-btn" tabindex="-1" id="doc-modal-1">
+        <div class="am-modal-dialog">
+            <div class="am-modal-hd">
+                该问题详情
+                <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close>&times;</a>
+            </div>
+            <div class="am-modal-bd">
+                <table class="am-table am-table-compact">
+                    <tr>
+                        <td>药品OE</td>
+                        <td id="modal-drugoe">3</td>
+                    </tr>
+                    <tr>
+                        <td>药品花费</td>
+                        <td id="modal-drug_costs">4</td>
+                    </tr>
+                    <tr>
+                        <td>住院天数</td>
+                        <td id="modal-hospitalization_days"></td>
+                    </tr>
+                    <tr>
+                        <td>耗材花费</td>
+                        <td id="modal-consumer_items_costs"></td>
+                    </tr>
+                    <tr>
+                        <td>耗材oe</td>
+                        <td id="modal-consumer_items_oe"></td>
+                    </tr>
+                    <tr>
+                        <td>主诊断编码</td>
+                        <td id="modal-main_diag_icd_code"></td>
+                    </tr>
+                    <tr>
+                        <td>主诊断名称</td>
+                        <td id="modal-main_diag_icd_name"></td>
+                    </tr>
+                    <tr>
+                        <td>主操作编码</td>
+                        <td id="modal-main_oper_code"></td>
+                    </tr>
+                    <tr>
+                        <td>主操作名称</td>
+                        <td id="modal-main_oper_name"></td>
+                    </tr>
+                    <tr>
+                        <td>上限</td>
+                        <td id="modal-max_limit"></td>
+                    </tr>
+                    <tr>
+                        <td>中位</td>
+                        <td id="modal-mid_limit"></td>
+                    </tr>
+                    <tr>
+                        <td>下限</td>
+                        <td id="modal-min_limit"></td>
+                    </tr>
+                    <tr>
+                        <td>超上限比</td>
+                        <td id="modal-over_max_limit_ratio"></td>
+                    </tr>
+                    <tr>
+                        <td>总花费</td>
+                        <td id="modal-total_costs"></td>
+                    </tr>
+                    <tr>
+                        <td>转科</td>
+                        <td id="modal-trans_dept"></td>
+                    </tr>
+                </table>
+                <a href="javascript: void(0)" class="am-btn am-btn-secondary" data-am-modal-close>确定</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div name="弹出窗口2-反馈规范">
+    <div class="am-modal am-modal-no-btn" tabindex="-1" id="doc-modal-2">
+        <div class="am-modal-dialog">
+            <div class="am-modal-hd">
+                书写规范
+                <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close>&times;</a>
+            </div>
+            <div class="am-modal-bd">
+                <table class="am-table am-table-compact">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td>自查事实：</td>
+                        <td>自查结论：</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2">合理模板：</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>调查中发现：该病例门诊诊断为慢性阻塞性肺炎，为慢性病患者，可以适当延长厨房用量。2.该病例门诊厨房开局30日量，且注明有“慢性病患者，病情需要”理由。</td>
+                        <td>核查结论：合理处方。核查理由：1.门诊处方用量超过7日量规定。2.慢性病情况下需要适当延长处方用量且注明了理由。</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2">不合理模板：</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>调查核实中发现：1.该病例患者门诊诊断为慢性阻塞性肺炎，为慢性病患者，可延长处方用量。2.该病例门诊处方开具30日量，未注明理由。</td>
+                        <td>裁定结论：不合理处方（不规范处方）。裁定理由：1.门诊处方用量超过7日量规定；2.慢性病情况下需要适当延长处方量未注明理由。</td>
+                    </tr>
+                </table>
+                <a href="javascript: void(0)" class="am-btn am-btn-secondary" data-am-modal-close>确定</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div name="弹出窗口3-历史回复">
+    <!-- <div class="am-modal am-modal-no-btn" tabindex="-1" id="doc-modal-historycomment">
+        <div class="am-modal-dialog">
+            <div class="am-modal-hd">
+                历史记录
+                <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close>&times;</a>
+            </div>
+            <div class="am-modal-bd">
+                <table class="am-table am-table-compact">
+                    <tr>
+                        <td>药品异常</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>耗材异常</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>住院天数异常</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>住院费用异常</td>
+                        <td></td>
+                    </tr>
+                </table>
+                <a href="javascript: void(0)" class="am-btn am-btn-secondary" data-am-modal-close>确定</a>
+            </div>
+        </div>
+    </div> -->
+
+    <div class="am-popup" id="doc-popup-historycomment">
+        <div class="am-popup-inner">
+            <div class="am-popup-hd">
+                <h4 class="am-popup-title">历史反馈</h4>
+                <span data-am-modal-close class="am-close">&times;</span>
+            </div>
+            <div class="am-popup-bd" id="popup-commenthistory">
+                ...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // $('#mastertable').bootstrapTable({
+    //     url: "/api/values/issuemaster",
+    //     classes: "am-table am-table-bordered am-table-compact",
+    //     pagination: true,
+    //     pageSize: 15,
+    //     clickToSelect: true,
+    //     showRefresh: true,
+    //     columns: [
+    //         {
+    //             field: 'DEPT_NAME',
+    //             title:'科室',
+    //             sortable: true,
+    //         }, {
+    //             field: 'PATIENT_NAME',
+    //             title:'病人'
+    //         },
+    //         {
+    //             field: 'INP_NO',
+    //             title:'住院号'
+    //         }, {
+    //             field: 'VISIT_ID',
+    //             title:'次数',
+    //             width: 20
+    //         }, {
+    //             field: 'DOCTOR_NAME',
+    //             title: '医生',
+    //             sortable: true,
+    //         },
+    //         {
+    //             field: 'IMPORT_DATE_TIME',
+    //             title: '导入时间'
+    //         },
+    //         //  {
+    //         //     field: 'MAIN_DIAG_ICD_NAME',
+    //         //     title:'主要诊断'
+    //         // }, {
+    //         //     field: 'MAIN_OPER_NAME',
+    //         //     title:'主要手术'
+    //         // }, 
+    //         {
+    //             field: 'ISSUE_TYPE',
+    //             title:'类型',
+    //             sortable: true,
+    //         },{
+    //             field:'FINAL_LOCK_TIME',
+    //             title:'反馈截止时间'
+    //         },{
+    //             field:'REPLIED_COUNT',
+    //             title:'反馈次数',
+    //             width:50,
+    //             sortable: true,
+    //         },{
+    //             field: 'ID',
+    //             title: '操作',
+    //             align: 'center',
+    //             valign: 'middle',
+    //             formatter: actionFormatter
+    //         }],
+    // });
+
+    $.ajax({
+        url: "/api/values/issuemaster",
+        type: 'GET',
+        async: true,
+        success: function(data) {
+            dataobj = JSON.parse(data);
+            $('#mastertable').bootstrapTable({
+                data: dataobj,
+                classes: "am-table am-table-bordered am-table-compact",
+                pagination: true,
+                pageSize: 15,
+                clickToSelect: true,
+                // showRefresh: true,
+                rowStyle: function(row, index) {
+//                    if (row.ISSUE_TYPE == "1") {
+//                        row.ISSUE_TYPE = "药品异常";
+//                    }
+                    return {
+                        css: { "font-size": "9px" }
+                    };
+                },
+                columns: [
+                    {
+                        field: 'TRANS_DEPT',
+                        title: '科室',
+                        sortable: true,
+                    },
+                    {
+                        field: 'INP_NO',
+                        title: '住院号'
+                    }, {
+                        field: 'VISIT_ID',
+                        title: '次数',
+                        width: 20
+                    }, {
+                        field: 'DOCTOR_IN_CHARGE',
+                        title: '医生',
+                        sortable: true,
+                    },
+                    {
+                        field: 'IMPORT_DATE_TIME',
+                        title: '导入时间'
+                    },
+                    {
+                        field: 'ISSUE_TYPE',
+                        title: '类型',
+                        sortable: true,
+                    }, {
+                        field: 'FINAL_LOCK_TIME',
+                        title: '反馈截止时间'
+                    }, {
+                        field: 'REPLIED_COUNT',
+                        title: '反馈次数',
+                        width: 50,
+                        sortable: true,
+                    }, {
+                        field: 'ID',
+                        title: '操作',
+                        align: 'center',
+                        valign: 'middle',
+                        formatter: actionFormatter
+                    }
+                ],
+            });
+        }
+    });
+
+
+    function actionFormatter(value, row, index) {
+        var id = value;
+        var result = "";
+//        result += "<a href='javascript:;' class='btn btn-xlarge blue' onclick=\"EditViewById('" + row.ISSUE_TYPE +', '+ row.IMPORT_DATE_TIME + "')\" title='编辑'><span class='glyphicon glyphicon-pencil'></span></a>";
+        var strbtn = "EditViewById('" + row.INP_NO + "','" + row.IMPORT_DATE_TIME + "','" + row.ISSUE_TYPE + "','"+row.VISIT_ID +"')";
+        var detailbtn = "DetailById('" + row.INP_NO + "','" + row.IMPORT_DATE_TIME + "','" + row.ISSUE_TYPE + "')";
+        var historybtn = "GetHistoryRplies('" +
+            row.INP_NO +
+            "','" +
+            row.IMPORT_DATE_TIME +
+            "','" +
+            row.ISSUE_TYPE +
+            "')";
+        result += "<a href='javascript:;' class='btn btn-sm blue' onclick=" +
+            detailbtn +
+            " title='查看详情' data-am-modal=\"{target: '#doc-modal-1', closeViaDimmer: 0, width: 420, height: 620}\"><span class='am-icon-align-justify'></span></a>";
+        result += "<a href='javascript:;' class='btn btn-sm blue' onclick=" +
+            historybtn +
+            " title='历史反馈记录' data-am-modal=\"{target: '#doc-popup-historycomment', closeViaDimmer: 0, width: 420, height: 525}\"><span class='glyphicon glyphicon-backward'></span></a>";
+        result += "<a href='javascript:;' class='btn btn-sm blue' onclick=" +
+            strbtn +
+            " title='回复'><span class='glyphicon glyphicon-pencil'></span></a>";
+
+//        result += "<button id=\"doc-prompt-toggle\" type=\"button\" class='btn btn-xlarge blue' title='编辑'><span class='glyphicon glyphicon-pencil'></span></button>";
+        return result;
+    }
+
+    function EditViewById(inpNo, importDateTime, issueType, visitId) {
+        console.log(inpNo + importDateTime + issueType + visitId);
+        //查询选择的问题的具体信息.
+        var strMasterUrl = "/api/values/getselectedmaster?inpNo=" +
+            inpNo +
+            "&importTime=" +
+            importDateTime +
+            "&issueType=" +
+            issueType +
+            "&visitId=" + 
+            visitId;
+        var strLastCommentrUrl = "/api/values/getselectedlastcomment?inpNo=" +
+            inpNo +
+            "&importTime=" +
+            importDateTime +
+            "&issueType=" +
+            issueType +
+            "&visitId=" + 
+            visitId;
+        $.ajax({
+            url: strMasterUrl,
+            async: false,
+            success: function(data) {
+                if (data.length === 0) {
+                    $("#factbox").val("未取到值");
+                    return;
+                }
+                var odata = JSON.parse(data);
+                $("#rpl-issuetype").val(odata[0].ISSUE_TYPE);
+                $("#rpl-inpno").val(odata[0].INP_NO);
+                $("#rpl-visitid").val(odata[0].VISIT_ID);
+                $("#rpl-diagname").val(odata[0].MAIN_DIAG_ICD_NAME);
+                $("#rpl-oprname").val(odata[0].MAIN_OPER_NAME);
+                $("#issueimportdatetime").val(odata[0].IMPORT_DATE_TIME);
+//                console.log(odata[0].FACT);
+            }
+        });
+
+        //获取选择的最后一条申诉。
+        $.ajax({
+            url: strLastCommentrUrl,
+            async: false,
+            success: function(data) {
+                if (data === "[]") {
+                    $("#factbox").val("1.出院诊断：\n2.调查核实中发现（针对异常类型进行分析）：");
+                    $("#resultbox").val("1.核查结论：（____合理）\n2.核查理由：");
+                    $("#statuslabel").html("<label class='label label-danger'>未填写</label>");
+                    return;
+//                console.log(odata[0].FACT);
+                }
+                $("#statuslabel").html("<label class='label label-success'>该条已经填写</label>");
+                var odata = JSON.parse(data);
+                $("#factbox").val(odata[0].FACT);
+                $("#resultbox").val(odata[0].RESULT);
+
+            }
+        });
+    }
+
+    function DetailById(inpNo, importDateTime, issueType) {
+        console.log(inpNo + importDateTime, +issueType);
+        var strSelectedIssueDetailUrl = "/api/values/getselectedmaster?inpNo=" +
+            inpNo +
+            "&importTime=" +
+            importDateTime +
+            "&issueType=" +
+            issueType;
+
+        $.ajax({
+            url: strSelectedIssueDetailUrl,
+            async: true,
+            method: 'GET',
+            success: function(data) {
+                data = JSON.parse(data);
+
+                // console.log(data);                
+                // for(var i in data[0]){
+                //     // console.log(data[0][i]);
+                //     console.log(data[0][i]);
+                // }
+                $("#modal-drugoe").text(data[0].DRUGOE);
+                $("#modal-drug_costs").text(data[0].DRUG_COSTS);
+                $("#modal-consumer_items_costs").text(data[0].CONSUMER_ITEMS_COSTS);
+                $("#modal-consumer_items_oe").text(data[0].CONSUMER_ITEMS_OE);
+                $("#modal-hospitalization_days").text(data[0].HOSPITALIZATION_DAYS);
+                $("#modal-main_diag_icd_code").text(data[0].MAIN_DIAG_ICD_CODE);
+                $("#modal-main_diag_icd_name").text(data[0].MAIN_DIAG_ICD_NAME);
+                $("#modal-main_oper_code").text(data[0].MAIN_OPER_CODE);
+                $("#modal-main_oper_name").text(data[0].MAIN_OPER_NAME);
+                $("#modal-max_limit").text(data[0].MAX_LIMIT);
+                $("#modal-mid_limit").text(data[0].MID_LIMIT);
+                $("#modal-min_limit").text(data[0].MIN_LIMIT);
+                $("#modal-over_max_limit_ratio").text(data[0].MAX_LIMIT_RATIO);
+                $("#modal-total_costs").text(data[0].TOTAL_COSTS);
+                $("#modal-trans_dept").text(data[0].TRANS_DEPT);
+            }
+        });
+    }
+
+    // 添加申诉内容。
+//     $("#replyadd").click(
+//         function() {
+//             if ($("#factbox").val() === "" || $("#resultbox").val() === "") {
+//                 alert("事实或者结论为空");
+//                 return;
+//             }
+//             var empno = $("#showempno").text();
+//             strUrl = "/api/values/addreply?issueType=" +
+//                 $("#rpl-issuetype").val() +
+// //                "&saveTime=" +
+// //                $("#rp-savetime").val() +
+//                 "&saverEmpNo=" +
+//                 empno +
+//                 "&saverName=" +
+//                 "某医生" +
+//                 "&issueImportDateTime=" +
+//                 $("#issueimportdatetime").val() +
+//                 "&inpNo=" +
+//                 $("#rpl-inpno").val() +
+//                 "&fact=" +
+//                 $("#factbox").val() +
+//                 "&result=" +
+//                 $("#resultbox").val();
+
+// //            var dataa = $("#rplform").serialize();
+//             $.ajax({
+//                 type: 'POST',
+//                 url: strUrl,
+//                 success: function(da) {
+//                     alert(da);
+//                     $('#mastertable').bootstrapTable('refresh');
+//                 }
+//             });
+
+//         });
+
+    //申诉内容添加。JSON格式。
+    $("#replyadd").click(
+        function() {
+            if ($("#factbox").val() === "" || $("#resultbox").val() === "") {
+                alert("事实或者结论为空");
+                return;
+            }
+            var empno = $("#showempno").text();
+            var replyobj = {
+                "ISSUE_TYPE": $("#rpl-issuetype").val(),
+                "SAVER_EMP_NO": empno,
+                "SAVER_NAME": "医生",
+                "ISSUE_IMPORT_DATE_TIME": $("#issueimportdatetime").val(),
+                "INP_NO": $("#rpl-inpno").val(),
+                "FACT": $("#factbox").val(),
+                "RESULT": $("#resultbox").val(),
+                "VISIT_ID": $("#rpl-visitid").val()
+            };
+
+            var strUrl = "/api/values/addreplyjson";
+
+//            var dataa = $("#rplform").serialize();
+            $.ajax({
+                type: 'POST',
+                url: strUrl,
+                data: JSON.stringify(replyobj),
+                contentType: "application/json; charset=utf-8",
+                // dataType: "json",
+                success: function(da) {
+                    alert(da);
+                    $('#mastertable').bootstrapTable('refresh');
+                }
+            });
+
+        });
+
+
+    function GetHistoryRplies(inpNo, importDateTime, issueType) {
+        var strCommentHistoriesUrl = "/api/values/GetHistoryRplies?inpNo=" +
+            inpNo +
+            "&issueImportDateTime=" +
+            importDateTime +
+            "&issueType=" +
+            issueType;
+
+        $.ajax({
+            type: 'GET',
+            async: true,
+            url: strCommentHistoriesUrl,
+            success: function(data) {
+                // alert(data);
+                // $("#popup-commenthistory").text(JSON.stringify(data));
+                data = JSON.parse(data);
+                var contentall = "";
+                var content = "<ul class='am-comments-list am-comments-list-flip'>";
+                var li = "";
+                for (var i = 0; i < data.length; i++) {
+                    li +=
+                        "<li class='am-comment am-comment-primary'><div class='am-comment-main><div class='am-comment-hd><div class='am-comment-meta'><a class='am-comment-author'>工号：" +
+                        data[i].SAVER_EMP_NO +
+                        "</a>提交于：<time>" +
+                        data[i].SAVE_TIME +
+                        "</time></div></div class='am-comment-bd'><p>" +
+                        data[i].RESULT +
+                        "</p><p>" +
+                        data[i].FACT +
+                        "</p></div></div></li>";
+                }
+                contentall = content + li + "</ul>";
+                $("#popup-commenthistory").html(contentall);
+            }
+        });
+    }
+
+
+    // 获取科室group
+    $.ajax({
+        url: '/api/values/GetDeptGroup',
+        type: 'GET',
+        async: true,
+        success: function(data) {
+            // console.log(JSON.stringify(data));
+            // $("#DeptGroupSelect").html=data;
+            var listStr = "";
+            dataobj = JSON.parse(data);
+            for (var i = 0; i < dataobj.length; i++) {
+                // console.log(dataobj[i].DEPT_NAME);
+                listStr += "<option value=\"" + dataobj[i].TRANS_DEPT + "\">" + dataobj[i].TRANS_DEPT + "</option>";
+            }
+            $("#DeptGroupSelect").append(listStr);
+        }
+    });
+
+    // 设置科室的选中事件，获取科室信息
+    $("#DeptGroupSelect").change(function() {
+        var deptname = $("#DeptGroupSelect").val();
+        $.ajax({
+            url: "/api/values/GetMasterByDept?deptname=" + deptname,
+            type: 'GET',
+            async: true,
+            success: function(data) {
+                // console.log(data);
+                var dataobj = JSON.parse(data);
+                $('#mastertable').bootstrapTable('load', dataobj);
+                $('#mastertable').bootstrapTable('refresh');
+            }
+        });
+    });
+
+    $("#ShowAllMaster").click(
+        function() {
+            $.ajax({
+                url: "/api/values/issuemaster",
+                type: "GET",
+                async: true,
+                success: function(data) {
+                    var dataobj = JSON.parse(data);
+                    $('#mastertable').bootstrapTable('load', dataobj);
+                    $('#mastertable').bootstrapTable('refresh');
+                }
+            });
+        }
+    );
+
+</script>
+<script>
+</script>

@@ -1,0 +1,118 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width" />
+
+<link rel="stylesheet" href="\lib\bootstrap-3.3.7-dist\css\bootstrap.css" />
+
+<link rel="stylesheet" href="\lib\bootstrap-table\bootstrap-table.css" />
+<link rel="stylesheet" href="\lib\bootstrap-datetimepicker\css\bootstrap-datetimepicker.css" />
+<link rel="stylesheet" href="\lib\bootstrap-3.3.7-dist\css\bootstrap-theme.css" />
+
+<script src="/lib/jquery-3.3.1.js"></script>
+
+<script src="\lib\antv\g2\dist\g2.min.js"></script>
+<script src="\lib\antv\data-set\dist\data-set.min.js"></script>
+<script src="\lib\bootstrap-3.3.7-dist\js\bootstrap.js"></script>
+<script src="\lib\bootstrap-table\bootstrap-table.js"></script>
+<script src="\lib\bootstrap-datetimepicker\js\bootstrap-datetimepicker.js"></script>
+<script src="\lib\bootstrap-datetimepicker\js\locales\bootstrap-datetimepicker.zh-CN.js"></script>
+
+<script src="\lib\tableExport-master\tableExport.js" type="text/javascript"></script>
+<script src="\lib\tableExport-master\libs\FileSaver\FileSaver.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="\lib\tableExport-master\libs\js-xlsx\xlsx.core.min.js"></script>
+
+<div class=" container">
+    <div>
+        <h1>检验平均等待时间</h1>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="col-sm-2">起</div>
+            <div class="col-sm-10"><input type="text" id="datetimepickerstart" class="form-control" /></div>
+            
+        </div>
+        <div class="col-sm-4">
+                <div class="col-sm-2">止</div>
+                <div class="col-sm-10"><input type="text" id="datetimepickerend" class="form-control" /></div>
+            
+        </div>
+        <div class="col-sm-4">
+            <button type="button" id="lisOkBtn" class="btn btn-default" onclick="getLisChecktimeData()" >查询</button>
+            <button type="button" id="exportLisBtn" class="btn btn-default" onclick="expTable()" >导出数据</button>
+        </div>
+    </div>
+    <div class="row">
+        <table id="lisdatatable" class="table table-condensed "></table>
+    </div>
+</div>
+
+
+<script>
+    $("#datetimepickerstart").datetimepicker({
+        format: 'yyyy-mm-dd',
+        language: 'zh-CN',
+        startView: 3,
+        minView: 2,
+        todayBtn: true
+    });
+    $("#datetimepickerend").datetimepicker({
+        format: 'yyyy-mm-dd',
+        language: 'zh-CN',
+        startView: 3,
+        minView: 2,
+        todayBtn: true
+    });
+    function getLisChecktimeData(){
+        var startDate = $("#datetimepickerstart").val();
+        var endDate = $("#datetimepickerend").val();
+        if(startDate==""||endDate==""||endDate<startDate){
+            alert("开始时间或停止时间有误");
+            return;
+        }
+        $("#lisOkBtn").html("查询中...");
+        $.ajax({
+        url: "/api/sy/LisAvgData?startdate="+startDate+"&enddate="+endDate,
+        type: 'GET',
+        sync: true,
+        success: function (data) {
+            var dataobj = JSON.parse(data);
+            $("#lisdatatable").bootstrapTable({
+                data: dataobj,
+                height: 650,
+                sortable: true,
+                pagination: true,
+                pageSize: 50,
+                pageList: [50,100,200,1000],
+                columns: [{
+                    field: 'PATIENT_TYPE',
+                    title: '病人类型'
+                }, {
+                    field: 'TEST_ORDER_NAME',
+                    title: '项目'
+                }, {
+                    field: 'PEOPLE_AMOUNT',
+                    title: '人数',
+                    sortable: true
+                }, {
+                    field: 'AVGTIME',
+                    title: '平均时间',
+                    sortable: true
+                }]
+            });
+            $("#lisdatatable").bootstrapTable('load', dataobj);
+            $("#lisdatatable").bootstrapTable('refresh');
+            $("#lisOkBtn").html("OK");
+        }
+    });
+    }
+    
+
+    function expTable(){
+        $("#lisdatatable").tableExport(
+            {
+                type:'xlsx',
+                fileName: '导出数据'
+            }
+        );
+    }
+</script>

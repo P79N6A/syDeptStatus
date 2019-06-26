@@ -1,0 +1,50 @@
+﻿
+@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width"/>
+
+<link rel="stylesheet" href="/lib/AmazeUI-2.7.2/css/amazeui.css"/>
+<script src="/lib/jquery-3.3.1.js"></script>
+<script src="/lib/AmazeUI-2.7.2/js/amazeui.js"></script>
+<script src="/lib/AmazeUI-2.7.2/js/amazeui.widgets.helper.js"></script>
+
+<div class="container">
+    <div class="am-g">
+        您的工号：<label class="am-badge am-badge-primary">@Html.ViewData["empno"]</label>
+    </div>
+    <div class="am-g">
+        <h2>注意：</h2>
+        <ul class="am-u-sm-6 am-list am-list-static">
+            <li>请核准确您科室的病人信息，再点击进行填写。</li>
+            <li>请勿更改其他科室的反馈意见。您的每次反馈信息更改将被记录。</li>
+            <li>如有转科病人，请您与所转科室电话沟通协调，共同完成。</li>
+            <li>请留意问题反馈截止时间，过期将无法提交。</li>
+        </ul>
+    </div>
+    <div class="am-g">
+        <div class=" am-u-sm-3">
+            <a class="am-btn am-btn-primary" href="@Url.Action("IssueMaster")">反馈疑似问题</a>
+        </div>
+        <div class=" am-u-sm-3">
+            <form method="POST" action="./index?type=1">
+                <div class="am-u-sm-3">
+                    <button class="am-btn am-btn-primary" type="submit">科主任</button>
+                </div>
+            </form>
+        </div>
+        <div class=" am-u-sm-3">
+            <form method="POST" action="./index?type=9">
+                <div class="am-u-sm-3">
+                    <button class="am-btn am-btn-primary" type="submit">三医监管办公室</button>
+                </div>
+            </form>
+        </div>
+
+        <div class=" am-u-sm-3">
+            55
+        </div>
+    </div>
+</div>

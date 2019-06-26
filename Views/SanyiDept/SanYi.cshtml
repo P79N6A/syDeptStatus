@@ -1,0 +1,373 @@
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width" />
+
+<link rel="stylesheet" href="\lib\bootstrap-4.0.0-dist\css\bootstrap.css">
+<link rel="stylesheet" href="\lib\bootstrap-table\bootstrap-table.css">
+
+<script src="/lib/jquery-3.3.1.js"></script>
+
+<script src="\lib\antv\g2\dist\g2.min.js"></script>
+<script src="\lib\antv\data-set\dist\data-set.min.js"></script>
+<script src="\lib\bootstrap-4.0.0-dist\js\bootstrap.bundle.js"></script>
+<script src="\lib\bootstrap-4.0.0-dist\js\bootstrap.js"></script>
+<script src="\lib\bootstrap-table\bootstrap-table.js"></script>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div>
+            <h1>临床路径情况</h1>
+        </div>
+    </div>
+    <div>
+        日期:<input name="DateMonth" id="CpDate" placeholder="201801" />
+        <button id="cpbtn" type="button" class="btn btn-default" onclick="cpbtnclick()">OK</button>
+    </div>
+    <div class="row alert alert-secondary">
+        <div class="col-6 ">
+            <table id="cptable" class="table table-condensed alert alert-primary"></table>
+        </div>
+        <div class="col-6">
+            <div id="mountNode"></div>
+        </div>
+    </div>
+    <div class="row">
+        <h1>三医疑似问题反馈</h1>
+    </div>
+    <div>
+        查看目前填写情况
+    </div>
+    <div>
+        日期:<input name="SyDateMonth" id="SyDate" placeholder="201801" />.
+        <button id="sybtn" type="button" class="btn btn-default" onclick="sybtnclick()">OK</button>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <table id="sytable" class="table table-condensed"></table>
+        </div>
+    </div>
+    <div>
+        <div>
+            <h1>每月疑似问题</h1>
+        </div>
+        <div class="row">
+            <input id="IssueAmountBtn" type="button" class="btn btn-default" value="点击查看" onclick="IssueAmountBtnClick()" />
+        </div>
+        <div class="row">
+            <div id="nodeIssueAmount" class="col-4"></div>
+            <div id="nodeIssueAmountTotal" class="col-4"></div>
+            <div id="nodeIssueAmountPercent" class="col-4"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var chart = new G2.Chart({
+        container: 'mountNode',
+        forceFit: true,
+        height: 400,
+        padding: [20, 100, 70, 50]
+    });
+
+    function cpbtnclick() {
+        var cpdate = $('#CpDate').val();
+        var insl = []; //加工后的数据数组
+
+        $.ajax({
+            url: "/api/sy/cpstatics?cpdate=" + cpdate,
+            type: 'GET',
+            sync: false,
+            success: function (data) {
+                var dataobj = JSON.parse(data);
+                $('#cptable').bootstrapTable({
+                    data: dataobj,
+                    height: 400,
+                    rowStyle: function (row, index) {
+                        return {
+                            css: {
+                                "font-size": "12px"
+                            }
+                        };
+                    },
+                    columns: [{
+                        field: 'IN_SL',
+                        title: '点入人数'
+                    }, {
+                        field: 'DISCHARGE_SL',
+                        title: '当月科室出院人数'
+                    }, {
+                        field: 'DEPT_NAME',
+                        title: '科室'
+                    }, ]
+                });
+                $('#cptable').bootstrapTable('load', dataobj);
+                $('#cptable').bootstrapTable('refresh');
+
+
+                dataobj.forEach(element => {
+                    var tempinsl = {
+                        "DEPT_NAME": element.DEPT_NAME,
+                        "TYPE": "IN",
+                        "SL": element.IN_SL
+                    };
+                    var tempdissl = {
+                        "DEPT_NAME": element.DEPT_NAME,
+                        "TYPE": "DISCHARGE",
+                        "SL": element.DISCHARGE_SL
+                    };
+                    insl.push(tempdissl);
+                    insl.push(tempinsl);
+                });
+                console.log(insl);
+
+                chart.source(insl);
+                chart.scale('SL', {
+                    alias: '人次'
+                });
+
+                chart.axis('DEPT_NAME', {
+                    label: {
+                        offset: 20,
+                        rotate: 70,
+                        textStyle: {
+                            fontSize: 10,
+                        }
+                    }
+                });
+                chart.axis('SL', {});
+
+                chart.legend({
+                    position: 'right-center'
+                });
+                chart.interval().position('DEPT_NAME*SL').color('TYPE', ['#0050b3', '#f14193']).opacity(1);
+                chart.render();
+            }
+        });
+    }
+
+    function sybtnclick() {
+        var sydate = $('#SyDate').val();
+
+        $.ajax({
+            url: "/api/sy/syrplstatic?sydate=" + sydate,
+            type: 'GET',
+            sync: false,
+            success: function (data) {
+                var dataobj = JSON.parse(data);
+                $('#sytable').bootstrapTable({
+                    data: dataobj,
+                    height: 600,
+                    pagination: true,
+                    pageSize: 15,
+                    pageList: [15, 30, 50],
+                    rowStyle: function (row, index) {
+                        return {
+                            css: {
+                                "font-size": "12px"
+                            }
+                        };
+                    },
+                    columns: [{
+                            field: 'TRANS_DEPT',
+                            title: '转科'
+                        }, {
+                            field: 'ISSUE_TYPE_NAME',
+                            title: '类型'
+                        }, {
+                            field: 'DOCTOR_IN_CHARGE',
+                            title: '主管'
+                        },
+                        {
+                            field: 'FACT',
+                            title: '事实'
+                        }, {
+                            field: 'RESULT',
+                            title: '结论'
+                        }
+                    ]
+                });
+                $('#sytable').bootstrapTable('load', dataobj);
+                $('#sytable').bootstrapTable('refresh');
+            }
+        });
+
+    }
+
+    // 疑似数量图表声明
+    var IssueAmountChart = new G2.Chart({
+        container: 'nodeIssueAmount',
+        forceFit: true,
+        height: 350,
+        padding: [20, 100, 70, 50]
+    });
+    var IssueAmountChartTotal = new G2.Chart({
+        container: 'nodeIssueAmountTotal',
+        forceFit: true,
+        height: 350,
+        padding: [20, 100, 70, 50]
+    });
+    var IssueAmountChartPercent = new G2.Chart({
+        container: 'nodeIssueAmountPercent',
+        forceFit: true,
+        height: 350,
+        padding: [20, 100, 70, 50]
+    });
+
+    function IssueAmountBtnClick() {
+        var monthArray = [];
+        var totalArray = [];
+        $.ajax({
+            url: "/api/sy/getissueamount",
+            type: 'GET',
+            sync: false,
+            success: function (data) {
+                var dataobj = JSON.parse(data);
+
+                var ds = new DataSet({
+                    state: {
+                        currentState: 'SA'
+                    }
+                });
+                var dv = ds.createView().source(dataobj);
+                var dvTotal = ds.createView().source(dataobj);
+                var dvPercent = ds.createView().source(dataobj);
+
+                dvTotal
+                    .transform({
+                        type: 'aggregate',
+                        fields: ['SL'],
+                        operations: ['sum'],
+                        as: ['TOTALSL'],
+                        groupBy: ['IMPORT_DATE']
+                    }) //分组后进行求和
+                console.log(dvTotal);
+
+
+                // dv
+                // .transform({
+                //     type: 'partition',
+                //     groupBy: ['IMPORT_DATE']
+                // })//根据月份进行分组
+                // .transform({
+                //     type: 'aggregate',
+                //     fields:['SL'],
+                //     operations: ['sum'],
+                //     as: ['TOTALSL'],
+                //     groupBy: ['IMPORT_DATE']
+                // })//分组后进行求和
+                // .transform({
+                //     type: 'fold',
+                //     fields: ['SL','ISSUE_TYPE'],
+                //     key: 'key',
+                //     value: 'SL',
+                //     retains: ['IMPORT_DATE','TOTALSL']
+                // })
+
+                console.log(dv);
+
+                IssueAmountChart.source(dv);
+                IssueAmountChart.scale('SL', {
+                    alias: '数量'
+                });
+
+                IssueAmountChart.axis('IMPORT_DATE', {
+                    label: {
+                        offset: 20,
+                        rotate: 70,
+                        textStyle: {
+                            fontSize: 10,
+                        }
+                    }
+                });
+                IssueAmountChart.axis('SL', {
+                    tickLine: {
+                        length: 10
+                    }
+                });
+                IssueAmountChart.legend({
+                    position: 'right-center'
+                });
+                // IssueAmountChart.line().shape('smooth').position('IMPORT_DATE*TOTALSL').opacity(0.9);
+                IssueAmountChart.interval().position('IMPORT_DATE*SL').color('ISSUE_TYPE', ['#40a9ff',
+                    '#1890ff', '#096dd9', '#0050b3'
+                ]).opacity(0.9);
+                IssueAmountChart.render();
+
+                IssueAmountChartTotal.source(dvTotal);
+                IssueAmountChartTotal.scale('TOTALSL', {
+                    alias: '总数量',
+                    min: 100
+                });
+                IssueAmountChartTotal.axis('IMPORT_DATE', {
+                    label: {
+                        offset: 30,
+                        // rotate: 70,
+                        textStyle: {
+                            // fontSize: 10,
+                        }
+                    }
+                });
+                IssueAmountChartTotal.axis('TOTALSL', {});
+                IssueAmountChartTotal.legend({
+                    position: 'right-center'
+                });
+                IssueAmountChartTotal.line().position('IMPORT_DATE*TOTALSL').opacity(1);
+                IssueAmountChartTotal.render();
+
+
+                //渲染分类百分比图
+                dvPercent
+                // .transform({
+                //     type:'percent',
+                //     field: 'SL',
+                //     dimension: 'IMPORT_DATE',
+                //     groupBy: ['ISSUE_TYPE'],
+                //     as: 'percent'
+                // });
+                .transform({
+                    type:'partition',
+                    groupBy: 'ISSUE_TYPE'
+                })
+                .transform({
+                    type:'percent',
+                    field: 'SL',
+                    dimension: 'ISSUE_TYPE',
+                    // groupBy: 'ISSUE_TYPE',
+                    as : 'percent'
+                })
+                console.log(dvPercent);
+                IssueAmountChartPercent.source(dvPercent);
+                IssueAmountChartPercent.scale('percent', {
+                    alias: '数量'
+                });
+
+                // IssueAmountChartPercent.axis('IMPORT_DATE', {
+                //     label: {
+                //         offset: 20,
+                //         rotate: 70,
+                //         textStyle: {
+                //             fontSize: 10,
+                //         }
+                //     }
+                // });
+                // IssueAmountChartPercent.axis('SL', {
+                //     tickLine: {
+                //         length: 10
+                //     }
+                // });
+                IssueAmountChartPercent.coord('theta');
+                IssueAmountChartPercent.tooltip({
+                    showTitle: false
+                });
+                // IssueAmountChart.line().shape('smooth').position('IMPORT_DATE*TOTALSL').opacity(0.9);
+                IssueAmountChartPercent.intervalStack().position('SL').color('ISSUE_TYPE').opacity(0.9);
+                IssueAmountChartPercent.render();
+            }
+        })
+    }
+</script>
+
+
